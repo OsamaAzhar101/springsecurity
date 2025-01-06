@@ -4,6 +4,8 @@ package com.javapulses.springsecurity.service;
 import com.javapulses.springsecurity.model.User;
 import com.javapulses.springsecurity.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class MyUserDetailsService implements UserDetailsService {
@@ -32,6 +36,11 @@ public class MyUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+
+        Set<GrantedAuthority> authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toSet());
+
         // Check if the password is encoded with BCrypt
         String password = user.getPassword();
         if (!password.startsWith("{bcrypt}")) {
@@ -42,7 +51,8 @@ public class MyUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
                 .password(password) // The password is expected to be hashed
-                .authorities(Collections.emptyList()) // Add roles/authorities if needed
+//                .authorities(Collections.emptyList()) // Add roles/authorities if needed
+                .authorities(authorities)
                 .build();
     }
 }
